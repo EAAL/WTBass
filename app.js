@@ -12,6 +12,7 @@ var path = require('path');
 var fb = require('facebook-js');
 var app = express();
 var db = mongojs('WTBass', ['pictures']);
+var appData = require('./ID.js');
 
 // all environments
 app.set('port', process.env.PORT || 3456);
@@ -34,18 +35,15 @@ if ('development' == app.get('env')) {
 
 app.get('/', routes.index);
 app.get('/start', function (req, res) {
-
-
-
 	res.redirect(fb.getAuthorizeUrl({
-		client_id: '259738020850947',
+		client_id: appData.AppID,
 		redirect_uri: 'http://aryazeghbali.ir:3456/auth',
 		scope: 'offline_access,user_photos'
 	}));
 });
 
 app.get('/auth', function (req, res) {
-  fb.getAccessToken('259738020850947', '95686212c9fd4b34b7b9ff3c79d085f7', req.param('code'), 'http://aryazeghbali.ir:3456/auth', function (error, access_token, refresh_token) {
+  fb.getAccessToken(appData.AppID, appData.AppSecret, req.param('code'), 'http://aryazeghbali.ir:3456/auth', function (error, access_token, refresh_token) {
   	if(error) {
   		res.render('error', {error: error.data});
   	}
@@ -80,10 +78,7 @@ app.get('/photo', function (req, res) {
 			res.render('error', {error: "login first"});
 		}
 		else {
-			//res.render('error', {error: body});
-			//console.log(body);
 			var userID = body.data[0].id;
-			// console.log("Ajab: " + body.data.name + " " + body.data.id);
 			req.session.userID = userID;
 	  		fb.apiCall('GET', '/me/photos',
 		    	{access_token: req.session.access_token},
