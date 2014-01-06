@@ -58,7 +58,7 @@ app.get('/auth', function (req, res) {
 			{
 				var userID = body.data[0].id;
 				db.pictures.findOne({id: userID}, function (err, data) {
-					if( !err && data != null && data.lastPic >= data.pictures.length) {
+					if(!err && data != null && data.lastPic >= data.pictures.length) {
 						res.render('error', {error: 'You had been subscribed to this vote'});
 					}
 					else {
@@ -88,7 +88,7 @@ app.get('/photo', function (req, res) {
 			    	for(i in bbody.data) {
 			    		var pic = bbody.data[i];
 			    		if(pic.tags.data.length >= 3 && pic.tags.data.length <= 8) {
-			    			pictures.push({pic: pic.source, width: pic.width, height: pic.height, tags: pic.tags});
+			    			pictures.push({picID: pic.id, pic: pic.source, width: pic.width, height: pic.height, tags: pic.tags});
 			    		}
 			    	}
 			    	db.pictures.save({id: userID, pictures: pictures, lastPic: 0}, function (err) {
@@ -119,6 +119,7 @@ app.get('/vote', function (req, res) {
 					res.render('error', {error: 'pictures have been finished'});	
 				}
 				else{
+					console.log(data.pictures[data.lastPic].picID);
 					res.render('vote', {title: 'vote', picture: data.pictures[data.lastPic], me: data.id});
 				}
 			});
