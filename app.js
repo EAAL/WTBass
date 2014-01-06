@@ -48,6 +48,7 @@ app.get('/auth', function (req, res) {
   		res.render('error', {error: error.data});
   	}
   	else {
+  		req.session.access_token = access_token;
   		fb.apiCall('GET', '/me/profile', {access_token: req.session.access_token}, function (error, response, body) {
 			if(body.data == null) {
 				console.log(body);
@@ -114,8 +115,8 @@ app.get('/vote', function (req, res) {
 				if(err2 || data == null) {
 					res.render('error', {error: 'picture not found'});
 				}
-				else if( data.lastPic >= data.pictures.length){
-					res.render('error', {error: 'pictures has been finished'});	
+				else if(data.lastPic >= data.pictures.length){
+					res.render('error', {error: 'pictures have been finished'});	
 				}
 				else{
 					res.render('vote', {title: 'vote', picture: data.pictures[data.lastPic], me: data.id});
