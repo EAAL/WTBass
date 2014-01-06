@@ -51,7 +51,6 @@ app.get('/auth', function (req, res) {
   		req.session.access_token = access_token;
   		fb.apiCall('GET', '/me/profile', {access_token: req.session.access_token}, function (error, response, body) {
 			if(body.data == null) {
-				console.log(body);
 				res.render('error', {error: "login first"});
 			}
 			else
@@ -85,9 +84,11 @@ app.get('/photo', function (req, res) {
 		    	{access_token: req.session.access_token},
 			    function (error, response, bbody) {
 			    	var pictures = [];
+			    	console.log(bbody.paging.next);
 			    	for(i in bbody.data) {
 			    		var pic = bbody.data[i];
-			    		if(pic.tags.data.length >= 3 && pic.tags.data.length <= 8) {
+			    		console.log(pic.id+' '+pic.tags.data.length);
+			    		if(pic.tags.data.length >= 3 && pic.tags.data.length <= 12) {
 			    			pictures.push({picID: pic.id, pic: pic.source, width: pic.width, height: pic.height, tags: pic.tags});
 			    		}
 			    	}
@@ -119,11 +120,16 @@ app.get('/vote', function (req, res) {
 					res.render('error', {error: 'pictures have been finished'});	
 				}
 				else{
-					console.log(data.pictures[data.lastPic].picID);
 					res.render('vote', {title: 'vote', picture: data.pictures[data.lastPic], me: data.id});
 				}
 			});
 		}
+	});
+});
+
+app.get(appData.resetURL, function (req, res) {
+	db.pictures.drop(function (err) {
+		res.redirect('/');
 	});
 });
 
