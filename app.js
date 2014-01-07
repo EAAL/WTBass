@@ -80,49 +80,84 @@ app.get('/photo', function (req, res) {
 		else {
 			var userID = body.data[0].id;
 			req.session.userID = userID;
-	  		fb.apiCall('GET', '/me/photos',
-		    	{access_token: req.session.access_token},
-			    function (error, response, bbody) {
-			    	var pictures = [];
-			    	console.log(bbody.paging.next);
+			var pictures = [];
+			fb.apiCall('GET', '/me/photos', {access_token: req.session.access_token, limit: 300}, function (error, response, bbody) {
+				if(bbody == null)
+					res.render('error', {error: "no picture!"});   		
+		    	else {
 			    	for(i in bbody.data) {
 			    		var pic = bbody.data[i];
-			    		console.log(pic.id+' '+pic.tags.data.length);
-			    		if(pic.tags.data.length >= 3 && pic.tags.data.length <= 12) {
-			    			pictures.push({picID: pic.id, pic: pic.source, width: pic.width, height: pic.height, tags: pic.tags});
+			    		var validTags = [];
+			    		var users = [];
+			    		for (var i = pic.tags.data.length - 1; i >= 0; i--) {
+			    			if(pic.tags.data[i].id) {
+			    				validTags.push(pic.tags.data[i]);
+			    				users.push(pic.tags.data[i].id);
+			    			}
+			    		}
+				    	if(validTags.length >= 3 && validTags.length <= 8) {
+			    			pictures.push({picID: pic.id, users: users, pic: pic.source, width: pic.width, height: pic.height, tags: validTags, votes: []});
 			    		}
 			    	}
-			    	db.pictures.save({id: userID, pictures: pictures, lastPic: 0}, function (err) {
-			    		if(err) {
-			    			res.render('error', {error: "could not save in DB"});
+			    	console.log(pictures.length);
+			    	function insert2db (n, err, callback) {
+			    		if(n < 0)
+			    			return callback(err);
+			    		db.pictures.find({picID: pictures[n].picID}, function (err, data) {
+			    			console.log("!!!!!!");
+			    			console.log(err);
+			    			console.log(data);
+			    			console.log("@@@@@@");
+			    			if (err || data.length == 0) {
+			    				db.pictures.save(pictures[n], function (err2) {
+			    					return insert2db(n-1, err2, callback);
+			    				});
+			    			}
+			    			else {
+			    				return insert2db(n-1, err, callback);
+			    			}
+			    		});
+			    	}
+			    	insert2db (pictures.length-1, null, function (err) {
+			    		if(err){
+			    			res.render('error', {error: err});
 			    		}
-			    		else {
+			    		else{
 			    			res.redirect('vote');
 			    		}
 			    	});
-			    }
-			);
-  		}
+		    	}
+			});
+		}
   	});
 });
 
 app.get('/vote', function (req, res) {
-	db.pictures.findOne({id: req.session.userID}, function (err, data) {
-		if(err || data == null) {
+	db.pictures.find({users: req.session.userID}, function (err, data) {
+		// console.log(err);
+		// console.log(data);
+		if(err || data.length == 0) {
 			res.render('error', {error: 'user not found'});
 		}
 		else {
-			db.pictures.update(data, {$inc: {lastPic: 1}}, function (err2, data2) {
-				if(err2 || data == null) {
-					res.render('error', {error: 'picture not found'});
-				}
-				else if(data.lastPic >= data.pictures.length){
-					res.render('error', {error: 'pictures have been finished'});	
-				}
-				else{
-					res.render('vote', {title: 'vote', picture: data.pictures[data.lastPic], me: data.id});
-				}
-			});
+			if(req.query.id){
+				db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
+					for (var i = data.length - 1; i >= 0; i--) {
+						if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
+							res.render('vote', {title: 'vote', picture: data[i]});
+						}
+					};
+				});
+			}
+			else {
+				console.log("no picID");
+				console.log(data.length);
+				for (var i = data.length - 1; i >= 0; i--) {
+					if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
+						res.render('vote', {title: 'vote', picture: data[i]});
+					}
+				};
+			}
 		}
 	});
 });
