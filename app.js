@@ -155,7 +155,7 @@ app.get('/vote', function (req, res) {
 				if(!flag) {
 					db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
 						getNextPic(req, res, function (d) {
-							return res.render('vote', {title: 'vote', picture: d});
+						return res.render('vote2', {title: 'vote', picture: d, questions : [{qid : 1, target : "Shomal", fy : ["Ghoalm","Jamil", "Mami"], fn : ["Ghamar"]} , {qid : 2, target : "Jonoob", fy : ["Hooshang","Ayaz"], fn : ["Mami", "Noid"]} ]});
 						}, function () {
 							res.render('done');
 						});
@@ -163,7 +163,7 @@ app.get('/vote', function (req, res) {
 				}
 				else {
 					getNextPic(req, res, function (d) {
-						return res.render('vote', {title: 'vote', picture: d});
+						return res.render('vote2', {title: 'vote', picture: d, questions : [{qid : 1, target : "Shomal", fy : ["Ghoalm","Jamil", "Mami"], fn : ["Ghamar"]} , {qid : 2, target : "Jonoob", fy : ["Hooshang","Ayaz"], fn : ["Mami", "Noid"]} ]});
 					}, function () {
 						res.render('done');
 					});
@@ -171,7 +171,7 @@ app.get('/vote', function (req, res) {
 			}
 			else {
 				getNextPic(req, res, function (d) {
-					return res.render('vote', {title: 'vote', picture: d});
+						return res.render('vote2', {title: 'vote', picture: d, questions : [{qid : 1, target : "Shomal", fy : ["Ghoalm","Jamil", "Mami"], fn : ["Ghamar"]} , {qid : 2, target : "Jonoob", fy : ["Hooshang","Ayaz"], fn : ["Mami", "Noid"]} ]});
 				}, function () {
 					res.render('done');
 				});
@@ -180,7 +180,7 @@ app.get('/vote', function (req, res) {
 	}
 	else {
 		getNextPic(req, res, function (d) {
-			return res.render('vote', {title: 'vote', picture: d});
+				return res.render('vote2', {title: 'vote', picture: d, questions : [{qid : 1, target : "Shomal", fy : ["Ghoalm","Jamil", "Mami"], fn : ["Ghamar"]} , {qid : 2, target : "Jonoob", fy : ["Hooshang","Ayaz"], fn : ["Mami", "Noid"]} ]});
 		}, function () {
 			res.render('done');
 		});
