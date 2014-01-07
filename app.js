@@ -128,66 +128,68 @@ app.get('/photo', function (req, res) {
   	});
 });
 
-app.get('/vote', function (req, res) {
+function getNextPic (req, res, callback, callback2) {
 	db.pictures.find({users: req.session.userID}, function (err, data) {
-		if(err || data.length == 0) {
-			res.render('error', {error: 'user not found'});
+		for (var i = data.length - 1; i >= 0; i--) {
+			var flag = false;
+			for (var j = data[i].votes.length - 1; j >= 0; j--) {
+				if(data[i].votes[j].userID == req.session.userID)
+					flag = true;
+			}
+			if(!flag)
+				return callback(data[i]);
 		}
-		else {
-			if(req.query.id){
-				db.pictures.findOne({picID: req.query.id}, function (err3, data3) {
-					if(data3) {
-						var flag = false;
-						for (var i = data3.votes.length - 1; i >= 0; i--) {
-							if(data3.votes[i].userID == req.session.userID)
-								flag = true;
-						}
-						if(!flag) {
-							db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
-								for (var i = data.length - 1; i >= 0; i--) {
-									//console.log(data[i]);
-									if(data[i].votes.indexOf({userID: req.session.userID, vote: true}) == -1) {
-										console.log(data[i].picID);
-										return res.render('vote', {title: 'vote', picture: data[i]});
-									}
-								}
-							});
-						}
-						else {
-							console.log("has voted before");
-							for (var i = data.length - 1; i >= 0; i--) {
-								if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
-									res.render('vote', {title: 'vote', picture: data[i]});
-								}
-							};
-						}
-					}
-					else {
-						console.log("invalid picture");
-						for (var i = data.length - 1; i >= 0; i--) {
-							if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
-								res.render('vote', {title: 'vote', picture: data[i]});
-							}
-						};
-					}
-				});
+		return callback2();
+	});
+}
+
+app.get('/vote', function (req, res) {
+	if(req.query.id){
+		db.pictures.findOne({picID: req.query.id}, function (err3, data3) {
+			if(data3) {
+				var flag = false;
+				for (var i = data3.votes.length - 1; i >= 0; i--) {
+					if(data3.votes[i].userID == req.session.userID)
+						flag = true;
+				}
+				if(!flag) {
+					db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
+						getNextPic(req, res, function (d) {
+							return res.render('vote', {title: 'vote', picture: d});
+						}, function () {
+							res.render('done');
+						});
+					});
+				}
+				else {
+					getNextPic(req, res, function (d) {
+						return res.render('vote', {title: 'vote', picture: d});
+					}, function () {
+						res.render('done');
+					});
+				}
 			}
 			else {
-				console.log("no picID");
-				console.log(data.length);
-				for (var i = data.length - 1; i >= 0; i--) {
-					if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
-						res.render('vote', {title: 'vote', picture: data[i]});
-					}
-				};
+				getNextPic(req, res, function (d) {
+					return res.render('vote', {title: 'vote', picture: d});
+				}, function () {
+					res.render('done');
+				});
 			}
-		}
-	});
+		});
+	}
+	else {
+		getNextPic(req, res, function (d) {
+			return res.render('vote', {title: 'vote', picture: d});
+		}, function () {
+			res.render('done');
+		});
+	}
 });
 
 app.get(appData.resetURL, function (req, res) {
 	db.pictures.drop(function (err) {
-		res.redirect('/');
+		res.redirect('/start');
 	});
 });
 
