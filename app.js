@@ -104,10 +104,6 @@ app.get('/photo', function (req, res) {
 			    		if(n < 0)
 			    			return callback(err);
 			    		db.pictures.find({picID: pictures[n].picID}, function (err, data) {
-			    			console.log("!!!!!!");
-			    			console.log(err);
-			    			console.log(data);
-			    			console.log("@@@@@@");
 			    			if (err || data.length == 0) {
 			    				db.pictures.save(pictures[n], function (err2) {
 			    					return insert2db(n-1, err2, callback);
@@ -134,19 +130,46 @@ app.get('/photo', function (req, res) {
 
 app.get('/vote', function (req, res) {
 	db.pictures.find({users: req.session.userID}, function (err, data) {
-		// console.log(err);
-		// console.log(data);
 		if(err || data.length == 0) {
 			res.render('error', {error: 'user not found'});
 		}
 		else {
 			if(req.query.id){
-				db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
-					for (var i = data.length - 1; i >= 0; i--) {
-						if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
-							res.render('vote', {title: 'vote', picture: data[i]});
+				db.pictures.findOne({picID: req.query.id}, function (err3, data3) {
+					if(data3) {
+						var flag = false;
+						for (var i = data3.votes.length - 1; i >= 0; i--) {
+							if(data3.votes[i].userID == req.session.userID)
+								flag = true;
 						}
-					};
+						if(!flag) {
+							db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
+								for (var i = data.length - 1; i >= 0; i--) {
+									//console.log(data[i]);
+									if(data[i].votes.indexOf({userID: req.session.userID, vote: true}) == -1) {
+										console.log(data[i].picID);
+										return res.render('vote', {title: 'vote', picture: data[i]});
+									}
+								}
+							});
+						}
+						else {
+							console.log("has voted before");
+							for (var i = data.length - 1; i >= 0; i--) {
+								if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
+									res.render('vote', {title: 'vote', picture: data[i]});
+								}
+							};
+						}
+					}
+					else {
+						console.log("invalid picture");
+						for (var i = data.length - 1; i >= 0; i--) {
+							if(data[i].votes.indexOf({userID: req.session.userID}) == -1) {
+								res.render('vote', {title: 'vote', picture: data[i]});
+							}
+						};
+					}
 				});
 			}
 			else {
