@@ -42,37 +42,41 @@
 			        <div class="panel panel-warning">
 				        <div class="panel-heading"> <%= qindex +1 %>. <%= q.target %>!</div>
 				        <div class="panel-body">
-				        <input type="hidden" value="o" name="<%= q.qid%>" id="<%= q.qid%>">
+				        <input type="hidden" value="o" name="V_<%= q.qid%>" id="<%= q.qid%>">
 				        <p class="question-p">
 				        	Imagine you and your friends have been invited to go to <b><%= q.target %></b>!
 				        	<br/>
-				        	<% q.fy.forEach(function(d,index){ %>
-				        		<% if (index == q.fy.length-1 && index != 0) { %>
-				        		<b><%=d%></b>
+				        	<% if (q.fy.length > 0) { %>
+					        	<% q.fy.forEach(function(d,index){ %>
+					        		<% if (index == q.fy.length-1 && index != 0) { %>
+					        		<b><%=d.name%></b>
+						        	<% } else { %>
+						        		<b><%=d.name%></b>,
+						        	<%}%>
+					        	<% }) %>
+					        	<% if (q.fy.length > 1) { %>
+					        		are
 					        	<% } else { %>
-					        		<b><%=d%></b>,
-					        	<%}%>
-				        	<% }) %>
-				        	<% if (q.fy.length > 1) { %>
-				        		are
-				        	<% } else { %>
-				        		is
-				        	<% } %>
-				        	going.
+					        		is
+					        	<% } %>
+					        	going.
+					        <% }%>
 				        	<br>
-				        	<% q.fn.forEach(function(d, index){ %>
-				        		<% if (index == q.fn.length-1) { %>
-				        		 <b><%=d%></b>
+				        	<% if (q.fn.length > 0) { %>
+					        	<% q.fn.forEach(function(d, index){ %>
+					        		<% if (index == q.fn.length-1) { %>
+					        		 <b><%=d.name%></b>
+						        	<% } else { %>
+						        		<b><%=d.name%></b>,
+						        	<%}%>
+					        	<% }) %>
+					        	<% if (q.fn.length > 1) { %>
+					        		are 
 					        	<% } else { %>
-					        		<b><%=d%></b>,
-					        	<%}%>
-				        	<% }) %>
-				        	<% if (q.fn.length > 1) { %>
-				        		are
-				        	<% } else { %>
-				        		is
-				        	<% } %>
-				        	not going.
+					        		is
+					        	<% } %>
+					        	not going.
+					        <% }%>
 				        	<h3><b> DO YOU GO? </b></h3>
 				        </p>
 				        <button type="button" class="btn-success btn-lg question-btn" id="<%= q.qid%>y" onclick="changeState('<%= q.qid%>y')"><span class="glyphicon glyphicon-ok"></span> </button>
@@ -84,7 +88,7 @@
 			        <div class="panel panel-warning">
 			        	<input type="hidden" name="id" value="<%= picture.picID %>" />
 			    		<input type="submit" class="btn btn-primary my-btn" value="Submit and go next">
-			    		<a href="" class="btn btn-danger my-btn">Quit</a>
+			    		<a href="finish" class="btn btn-danger my-btn">Quit</a>
 			        </div>
 			        
 		      	</div>

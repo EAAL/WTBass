@@ -11,7 +11,7 @@ var http = require('http');
 var path = require('path');
 var fb = require('facebook-js');
 var app = express();
-var db = mongojs('WTBass', ['pictures']);
+var db = mongojs('WTBass', ['pictures', 'votes']);
 var appData = require('./ID.js');
 
 // all environments
@@ -62,7 +62,8 @@ app.get('/auth', function (req, res) {
 					}
 					else {
 					  	req.session.access_token = access_token;
-					    res.render('client', {title: 'Do you go?'});
+					    // res.render('client', {title: 'Do you go?'});
+					    res.redirect('photo');
 					}
 				});
 			}
@@ -89,14 +90,17 @@ app.get('/photo', function (req, res) {
 			    		var pic = bbody.data[i];
 			    		var validTags = [];
 			    		var users = [];
-			    		for (var i = pic.tags.data.length - 1; i >= 0; i--) {
-			    			if(pic.tags.data[i].id) {
-			    				validTags.push(pic.tags.data[i]);
-			    				users.push(pic.tags.data[i].id);
-			    			}
-			    		}
-				    	if(validTags.length >= 3 && validTags.length <= 8) {
-			    			pictures.push({picID: pic.id, users: users, pic: pic.source, width: pic.width, height: pic.height, tags: validTags, votes: []});
+			    		if(pic.tags)
+			    		{
+				    		for (var i = pic.tags.data.length - 1; i >= 0; i--) {
+				    			if(pic.tags.data[i].id) {
+				    				validTags.push(pic.tags.data[i]);
+				    				users.push(pic.tags.data[i].id);
+				    			}
+				    		}
+					    	if(validTags.length >= 3 && validTags.length <= 10) {
+				    			pictures.push({picID: pic.id, users: users, pic: pic.source, width: pic.width, height: pic.height, tags: validTags, votes: []});
+				    		}
 			    		}
 			    	}
 			    	console.log(pictures.length);
@@ -126,6 +130,7 @@ app.get('/photo', function (req, res) {
 			});
 		}
   	});
+
 });
 
 function getNextPic (req, res, callback, callback2) {
@@ -138,29 +143,73 @@ function getNextPic (req, res, callback, callback2) {
 			}
 			if(!flag) {
 				var Qs = [];
-				var tars = ["Cinema", "Park", "a Trip", "Karting"];
-				for (var k = 0; k < 4; k++) {
-					var question = {qid: k+1, target: tars[k], fn: [], fy: []};
+				var tars = ["Cinema", "Park", "a Trip", "Karting", "Climbing", "Jogging", "Workshop"];
+				var qCount = 0;
+				if (data[i].tags.length < 4)
+					qCount = 2
+				else if (data[i].tags.length < 5)
+					qCount = 3
+				else if (data[i].tags.length < 7)
+					qCount = 6
+				else
+					qCount =7
+				for (var k = 0; k < qCount; k++) {
+					var question = {voter : req.session.userID, target: tars[k], fn: [], fy: [], id : 1};
 					for (var j = data[i].tags.length - 1; j >= 0; j--) {
 						if(data[i].tags[j].id != req.session.userID){
 							var r = Math.random();
-							if(r < 1.0/3.0)
-								question.fn.push(data[i].tags[j].name);
-							else if(r < 2.0/3.0)
-								question.fy.push(data[i].tags[j].name);
+							if(r < 1.3/3.0)
+							{
+								question.fn.push({name : data[i].tags[j].name, id : data[i].tags[j].id} );
+							}
+							else if(r < 2.6/3.0)
+								question.fy.push({name : data[i].tags[j].name, id : data[i].tags[j].id} );
+							// else{
+							// 	question.fy.push({name : data[i].tags[j].name, id : data[i].tags[j].id});
+							// }
 						}
 					}
 					Qs.push(question);
 				}
-				return callback(data[i], Qs);
+				function insert2db (n, err, callback) {
+		    		if(n < 0)
+		    			return callback(err);
+		    		db.votes.find({voter: req.session.userID, fn : Qs[n].fn, fy : Qs[n].nUsers}, function (err, data2) {
+		    			if (err || data2.length == 0) {
+		    				Qs[n].qid = db.ObjectId();
+		    				db.votes.insert({voter: req.session.userID, fn : Qs[n].fn, fy : Qs[n].nUsers, _id: Qs[n].qid, yCount: 0, nCount: 0}, function (err2) {
+			    					return insert2db(n-1, err2, callback);
+		    				});
+		    			}
+		    			else {
+		    				Qs[n].qid = db.ObjectId();
+		    				return insert2db(n-1, err, callback);
+		    			}
+		    		});
+		    	}
+		    	return insert2db (Qs.length-1, null, function (err) {
+			    		if(err){
+			    			res.render('error', {error: "There are some problems."});
+			    		}
+			    		else{
+			    			return callback(data[i], Qs);
+			    		}
+			    	});
+				// db.votes.insert(Qs);
+				// return callback(data[i], Qs);
 			}
 		}
 		return callback2();
 	});
 }
 
+app.get('/finish', function (req, res) {
+	res.render('done' ,{title: 'Done', body : 'Thank\'s for your participation :)'});
+});
+
 app.get('/vote', function (req, res) {
 	if(req.query.id){
+
 		db.pictures.findOne({picID: req.query.id}, function (err3, data3) {
 			if(data3) {
 				var flag = false;
@@ -170,42 +219,52 @@ app.get('/vote', function (req, res) {
 				}
 				if(!flag) {
 					db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
+						for(xxx in req.query) {
+							if(xxx.substring(0, 1) == 'V'){
+								if(req.query[xxx] == 'y')
+									db.votes.update({_id: db.ObjectId(xxx.substring(2))}, {$inc: {yCount: 1}});
+								else if(req.query[xxx] == 'n')
+									db.votes.update({_id: db.ObjectId(xxx.substring(2))}, {$inc: {nCount: 1}});
+							}
+						}
 						getNextPic(req, res, function (d, q) {
-							return res.render('vote2', {title: 'vote', picture: d, questions: q});
+							return res.render('vote2', {title: 'vote', picture: d, questions: q, userID : req.session.userID });
 						}, function () {
-							res.render('done');
+							res.render('done' ,{title: 'Done', body : 'It\'s finished, Thank You! :)'});
 						});
 					});
 				}
 				else {
 					getNextPic(req, res, function (d, q) {
-						return res.render('vote2', {title: 'vote', picture: d, questions: q});
+						return res.render('vote2', {title: 'vote', picture: d, questions: q, userID : req.session.userID});
 					}, function () {
-						res.render('done');
+						res.render('done' ,{title: 'Done', body : 'It\'s finished, Thank You! :)'});
 					});
 				}
 			}
 			else {
 				getNextPic(req, res, function (d, q) {
-					return res.render('vote2', {title: 'vote', picture: d, questions: q});
+					return res.render('vote2', {title: 'vote', picture: d, questions: q, userID : req.session.userID});
 				}, function () {
-					res.render('done');
+					res.render('done' ,{title: 'Done', body : 'It\'s finished, Thank You! :)'});
 				});
 			}
 		});
 	}
 	else {
 		getNextPic(req, res, function (d, q) {
-			return res.render('vote2', {title: 'vote', picture: d, questions: q});
+			return res.render('vote2', {title: 'vote', picture: d, questions: q, userID : req.session.userID});
 		}, function () {
-			res.render('done');
+			res.render('done' ,{title: 'Done', body : 'You don\'t have any pictures left. Thanks for your time :)'});
 		});
 	}
 });
 
 app.get(appData.resetURL, function (req, res) {
 	db.pictures.drop(function (err) {
-		res.redirect('/start');
+		db.votes.drop(function (err2) {
+			res.redirect('/start');
+		});
 	});
 });
 
