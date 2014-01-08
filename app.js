@@ -140,7 +140,7 @@ function getNextPic (req, res, callback, callback2) {
 				var Qs = [];
 				var tars = ["Cinema", "Park", "a Trip", "Karting"];
 				for (var k = 0; k < 4; k++) {
-					var question = {target: tars[k], fn: [], fy: []};
+					var question = {qid: k+1, target: tars[k], fn: [], fy: []};
 					for (var j = data[i].tags.length - 1; j >= 0; j--) {
 						if(data[i].tags[j].id != req.session.userID){
 							var r = Math.random();
