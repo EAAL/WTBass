@@ -136,8 +136,24 @@ function getNextPic (req, res, callback, callback2) {
 				if(data[i].votes[j].userID == req.session.userID)
 					flag = true;
 			}
-			if(!flag)
-				return callback(data[i]);
+			if(!flag) {
+				var Qs = [];
+				var tars = ["Cinema", "Park", "a Trip", "Karting"];
+				for (var k = 0; k < 4; k++) {
+					var question = {target: tars[k], fn: [], fy: []};
+					for (var j = data[i].tags.length - 1; j >= 0; j--) {
+						if(data[i].tags[j].id != req.session.userID){
+							var r = Math.random();
+							if(r < 1.0/3.0)
+								question.fn.push(data[i].tags[j].name);
+							else if(r < 2.0/3.0)
+								question.fy.push(data[i].tags[j].name);
+						}
+					}
+					Qs.push(question);
+				}
+				return callback(data[i], Qs);
+			}
 		}
 		return callback2();
 	});
@@ -154,24 +170,24 @@ app.get('/vote', function (req, res) {
 				}
 				if(!flag) {
 					db.pictures.update({picID: req.query.id}, {$push: {votes: {userID: req.session.userID, vote: true}}}, function (err2, data2) {
-						getNextPic(req, res, function (d) {
-							return res.render('vote', {title: 'vote', picture: d});
+						getNextPic(req, res, function (d, q) {
+							return res.render('vote2', {title: 'vote', picture: d, questions: q});
 						}, function () {
 							res.render('done');
 						});
 					});
 				}
 				else {
-					getNextPic(req, res, function (d) {
-						return res.render('vote', {title: 'vote', picture: d});
+					getNextPic(req, res, function (d, q) {
+						return res.render('vote2', {title: 'vote', picture: d, questions: q});
 					}, function () {
 						res.render('done');
 					});
 				}
 			}
 			else {
-				getNextPic(req, res, function (d) {
-					return res.render('vote', {title: 'vote', picture: d});
+				getNextPic(req, res, function (d, q) {
+					return res.render('vote2', {title: 'vote', picture: d, questions: q});
 				}, function () {
 					res.render('done');
 				});
@@ -179,8 +195,8 @@ app.get('/vote', function (req, res) {
 		});
 	}
 	else {
-		getNextPic(req, res, function (d) {
-			return res.render('vote', {title: 'vote', picture: d});
+		getNextPic(req, res, function (d, q) {
+			return res.render('vote2', {title: 'vote', picture: d, questions: q});
 		}, function () {
 			res.render('done');
 		});
