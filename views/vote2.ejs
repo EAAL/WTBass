@@ -12,13 +12,13 @@
 
         <div class="pull-right">
           <ul class="nav nav-pills">
-            <li><a href=""><span class="glyphicon glyphicon-home"></span></a></li>
-            <li><a href="">About Us</a></li>
+            <li><a href="/"><span class="glyphicon glyphicon-home"></span></a></li>
+            <!-- <li><a href="">About Us</a></li> -->
           </ul>
         </div>
         <div class="pull-left">
           <ul class="nav nav-pills">
-            <li><a href=""><span class="glyphicon glyphicon-user"></span></a></li>
+            <li><a href="finish" class="btn btn-danger ">Quit</a></li>
           </ul>
         </div>
       </div>
@@ -35,6 +35,11 @@
           		<div class="picture-container">
           			<image src="<%= picture.pic %>" class="img-responsive picture"></image>
           			<button class="btn btn-warning my-btn"> Skip to next Picture </button>
+          			<% if (picture.votedUsers.length > 0) { %>
+          			<p class="question-p">
+          				<b>Your friends also voted.</b>
+          			</p>
+          			<% } %>
           		</div>
           		<hr/>
 		        <div class="posts">
@@ -59,7 +64,7 @@
 					        	<% } else { %>
 					        		is
 					        	<% } %>
-					        	going.
+					        	<b style="color:red"> going. </b>
 					        <% }%>
 				        	<br>
 				        	<% if (q.fn.length > 0) { %>
@@ -75,9 +80,9 @@
 					        	<% } else { %>
 					        		is
 					        	<% } %>
-					        	not going.
+					        	<b style="color:red">  not </b> going.
 					        <% }%>
-				        	<h3><b> DO YOU GO? </b></h3>
+				        	<h3><b> WOULD YOU GO? </b></h3>
 				        </p>
 				        <button type="button" class="btn-success btn-lg question-btn" id="<%= q.qid%>y" onclick="changeState('<%= q.qid%>y')"><span class="glyphicon glyphicon-ok"></span> </button>
 				        <button type="button" class="btn-danger btn-lg question-btn" id="<%= q.qid%>n" onclick="changeState('<%= q.qid%>n')"> <span class="glyphicon glyphicon-remove"></span> </button>
